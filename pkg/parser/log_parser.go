@@ -34,8 +34,8 @@ func (e *LogEntry) GetPriority() int {
 	return 0 // Default for unknown levels.
 }
 
-// FilterLogsByLevelAndTime reads and filters log entries by log level and time range.
-func FilterLogsByLevelAndTime(filePath string, minLogLevel string, startTime string, endTime string) error {
+// FilterLogsByLevelAndKeyword filters logs by level, time range, and keyword
+func FilterLogsByLevelAndTimeAndKeyword(filePath string, minLogLevel string, startTime string, endTime string, keyword string) error {
 	minLogLevelPriority, exists := logLevelPriority[strings.ToUpper(minLogLevel)]
 	if !exists {
 		return fmt.Errorf("invalid log level: %s", minLogLevel)
@@ -75,9 +75,17 @@ func FilterLogsByLevelAndTime(filePath string, minLogLevel string, startTime str
 		}
 
 		// Log level filtering
-		if entry.GetPriority() >= minLogLevelPriority {
-			fmt.Printf("%s [%s] %s: %s\n", entry.Timestamp, entry.Level, entry.Component, entry.Message)
+		if entry.GetPriority() < minLogLevelPriority {
+			continue
 		}
+
+		// Keyword filtering: if a keyword is provided, check if it exists in the log message
+		if keyword != "" && !strings.Contains(entry.Message, keyword) {
+			continue
+		}
+
+		// If log passes all filters, print it
+		fmt.Printf("%s [%s] %s: %s\n", entry.Timestamp, entry.Level, entry.Component, entry.Message)
 	}
 
 	if err := scanner.Err(); err != nil {
