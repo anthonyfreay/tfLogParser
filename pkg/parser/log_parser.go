@@ -34,67 +34,6 @@ func (e *LogEntry) GetPriority() int {
 	return 0 // Default for unknown levels.
 }
 
-// FilterLogsByLevelAndKeyword filters logs by level, time range, and keyword
-func FilterLogsByLevelAndTimeAndKeyword(filePath string, minLogLevel string, startTime string, endTime string, keyword string) error {
-	minLogLevelPriority, exists := logLevelPriority[strings.ToUpper(minLogLevel)]
-	if !exists {
-		return fmt.Errorf("invalid log level: %s", minLogLevel)
-	}
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("error opening file: %v", err)
-	}
-	defer file.Close()
-
-	var lastEntry *LogEntry
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Handle multi-line continuation
-		if IsContinuationLine(line) {
-			if lastEntry != nil {
-				lastEntry.Message += " " + strings.TrimSpace(line)
-			}
-			continue
-		}
-
-		entry, err := ParseLogLine(line)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing log line: %v\n", err)
-			continue
-		}
-
-		lastEntry = entry
-
-		// Time filtering
-		if !IsWithinTimeRange(entry.Timestamp, startTime, endTime) {
-			continue
-		}
-
-		// Log level filtering
-		if entry.GetPriority() < minLogLevelPriority {
-			continue
-		}
-
-		// Keyword filtering: if a keyword is provided, check if it exists in the log message
-		if keyword != "" && !strings.Contains(entry.Message, keyword) {
-			continue
-		}
-
-		// If log passes all filters, print it
-		fmt.Printf("%s [%s] %s: %s\n", entry.Timestamp, entry.Level, entry.Component, entry.Message)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading log file: %v", err)
-	}
-
-	return nil
-}
-
 // IsContinuationLine checks if a line is a continuation (i.e., has no timestamp or log level).
 func IsContinuationLine(line string) bool {
 	timestampPattern := `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`
@@ -160,4 +99,65 @@ func IsWithinTimeRange(timestamp string, startTime string, endTime string) bool 
 	}
 
 	return true // Allow log if it passes all checks
+}
+
+// FilterLogsByLevelAndKeyword filters logs by level, time range, and keyword
+func FilterLogsByLevelAndTimeAndKeyword(filePath string, minLogLevel string, startTime string, endTime string, keyword string) error {
+	minLogLevelPriority, exists := logLevelPriority[strings.ToUpper(minLogLevel)]
+	if !exists {
+		return fmt.Errorf("invalid log level: %s", minLogLevel)
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("error opening file: %v", err)
+	}
+	defer file.Close()
+
+	var lastEntry *LogEntry
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Handle multi-line continuation
+		if IsContinuationLine(line) {
+			if lastEntry != nil {
+				lastEntry.Message += " " + strings.TrimSpace(line)
+			}
+			continue
+		}
+
+		entry, err := ParseLogLine(line)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing log line: %v\n", err)
+			continue
+		}
+
+		lastEntry = entry
+
+		// Time filtering
+		if !IsWithinTimeRange(entry.Timestamp, startTime, endTime) {
+			continue
+		}
+
+		// Log level filtering
+		if entry.GetPriority() < minLogLevelPriority {
+			continue
+		}
+
+		// Keyword filtering: if a keyword is provided, check if it exists in the log message
+		if keyword != "" && !strings.Contains(entry.Message, keyword) {
+			continue
+		}
+
+		// If log passes all filters, print it
+		fmt.Printf("%s [%s] %s: %s\n", entry.Timestamp, entry.Level, entry.Component, entry.Message)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading log file: %v", err)
+	}
+
+	return nil
 }
