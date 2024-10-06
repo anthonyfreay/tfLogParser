@@ -71,7 +71,6 @@ func FilterLogsByLevelAndTime(filePath string, minLogLevel string, startTime str
 
 		// Time filtering
 		if !IsWithinTimeRange(entry.Timestamp, startTime, endTime) {
-			// Debug: indicate time filtering
 			continue
 		}
 
