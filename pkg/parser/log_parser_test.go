@@ -36,6 +36,10 @@ func TestGetPriority(t *testing.T) {
 	}
 }
 
+func TestIsContinuationLine(t *testing.T) {
+	// TODO
+}
+
 func TestParseLogLine(t *testing.T) {
 	line := "2024-10-03T00:43:29.918-0400 [INFO] provider: Starting..."
 	entry, err := ParseLogLine(line)
@@ -45,4 +49,12 @@ func TestParseLogLine(t *testing.T) {
 	if entry.Level != "INFO" {
 		t.Errorf("Expected level INFO, got %s", entry.Level)
 	}
+}
+
+func TestIsWithinTimeRange(t *testing.T) {
+	// TODO
+}
+
+func TestFilterLogsByLevelAndTimeAndKeyword(t *testing.T) {
+	// TODO
 }
