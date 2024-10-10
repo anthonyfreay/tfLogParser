@@ -1,7 +1,10 @@
 package main
 
-import "tfLogParser/cmd"
+import (
+	"tfLogParser/cmd"
+	"tfLogParser/pkg/parser"
+)
 
 func main() {
-	cmd.Execute()
+	cmd.Execute(parser.FilterLogsByLevelAndTimeAndKeyword)
 }

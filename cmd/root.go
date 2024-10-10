@@ -3,26 +3,29 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"tfLogParser/pkg/parser"
 )
 
-func Execute() {
+// Type definition for the filter function
+type FilterFunc func(filePath, level, startTime, endTime, searchKeyword string) error
+
+// Execute accepts the filtering function and file path as a dedicated flag
+func Execute(filterLogs FilterFunc) error {
 	logLevel := flag.String("level", "INFO", "Minimum log level to display (TRACE, DEBUG, INFO, WARN, ERROR)")
 	startTime := flag.String("start-time", "", "Filter logs starting from this time (RFC3339 format)")
 	endTime := flag.String("end-time", "", "Filter logs up to this time (RFC3339 format)")
 	searchKeyword := flag.String("search", "", "Keyword to search for in log messages")
+	filePath := flag.String("file", "", "Path to the log file to be processed")
+
 	flag.Parse()
 
-	if len(flag.Args()) == 0 {
-		fmt.Println("Please provide a log file.")
-		return
+	if *filePath == "" {
+		return fmt.Errorf("please provide a log file path using the -file flag")
 	}
 
-	filePath := flag.Arg(0)
-
-	// Call the log parser and filter by log level and time range
-	err := parser.FilterLogsByLevelAndTimeAndKeyword(filePath, *logLevel, *startTime, *endTime, *searchKeyword)
+	// Call the injected filter function with the provided file path and other flags
+	err := filterLogs(*filePath, *logLevel, *startTime, *endTime, *searchKeyword)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		return fmt.Errorf("%v", err)
 	}
+	return nil
 }
