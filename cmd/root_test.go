@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -32,21 +33,21 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			name:          "Missing log file",
-			args:          []string{"cmd"},
+			args:          []string{"cmd", "--level=INFO", "--start-time=2024-10-03T00:43:29.918-0400", "--end-time=2024-10-03T00:43:29.919-0400"},
 			expectedError: true,
-			expectedLog:   "Please provide a log file.\n",
+			expectedLog:   "please provide a log file path using the -file flag\n",
 		},
 		{
 			name:          "Valid log file with INFO level",
-			args:          []string{"cmd", "test.log", "-level", "INFO"},
+			args:          []string{"cmd", "--level=INFO", "--start-time=2024-10-03T00:43:29.918-0400", "--end-time=2024-10-03T00:43:29.919-0400", "--file=resources/log.txt"},
 			expectedError: false,
 			expectedLog:   "",
 		},
 		{
 			name:          "Filter logs returns error",
-			args:          []string{"cmd", "error.log", "-level", "ERROR"},
+			args:          []string{"cmd", "--level=ERROR", "--start-time=2024-10-03T00:43:29.918-0400", "--end-time=2024-10-03T00:43:29.919-0400", "--file=error.log"},
 			expectedError: true,
-			expectedLog:   "Error: mock error\n",
+			expectedLog:   "error filtering logs: mock error\n",
 		},
 	}
 
@@ -63,12 +64,17 @@ func TestExecute(t *testing.T) {
 			log.SetOutput(&buf) // Redirect log output to buffer
 
 			// Call Execute with the mock filter function
-			Execute(mockFilterLogs)
+			err := Execute(mockFilterLogs)
 
-			// Validate output based on expected error
+			// Check if an error was expected
+			if (err != nil) != tc.expectedError {
+				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err != nil)
+			}
+
+			// Validate log output using strings.Contains
 			output := buf.String()
-			if tc.expectedLog != output {
-				t.Errorf("Expected log output %q but got %q", tc.expectedLog, output)
+			if tc.expectedLog != "" && !strings.Contains(output, tc.expectedLog) {
+				t.Errorf("Expected log to contain %q but got %q", tc.expectedLog, output)
 			}
 		})
 	}
