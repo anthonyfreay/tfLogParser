@@ -1,7 +1,16 @@
 package main
 
-import "tfLogParser/cmd"
+import (
+	"fmt"
+	"os"
+	"tfLogParser/cmd"
+	"tfLogParser/pkg/parser"
+)
 
 func main() {
-	cmd.Execute()
+	err := cmd.Execute(parser.FilterLogsByLevelAndTimeAndKeyword)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1) // Ensure the program exits with a non-zero status on error
+	}
 }
