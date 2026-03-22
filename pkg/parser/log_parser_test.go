@@ -1,8 +1,10 @@
 package parser
 
 import (
+	"io"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestGetPriority(t *testing.T) {
@@ -72,6 +74,14 @@ func TestParseLogLine(t *testing.T) {
 }
 
 func TestIsWithinTimeRange(t *testing.T) {
+	parseTime := func(s string) *time.Time {
+		if s == "" {
+			return nil
+		}
+		t, _ := time.Parse(layout, s)
+		return &t
+	}
+
 	testCases := []struct {
 		startTime           string
 		endTime             string
@@ -80,10 +90,13 @@ func TestIsWithinTimeRange(t *testing.T) {
 	}{
 		{startTime: "2024-10-03T00:43:29.930-0400", endTime: "2024-10-03T00:43:29.931-0400", currentTime: "2024-10-03T00:43:29.932-0400", expectedInTimeRange: false},
 		{startTime: "2024-10-03T00:43:29.930-0400", endTime: "2024-10-03T00:43:29.935-0400", currentTime: "2024-10-03T00:43:29.932-0400", expectedInTimeRange: true},
+		{startTime: "", endTime: "", currentTime: "2024-10-03T00:43:29.932-0400", expectedInTimeRange: true},
+		{startTime: "2024-10-03T00:43:29.930-0400", endTime: "", currentTime: "2024-10-03T00:43:29.932-0400", expectedInTimeRange: true},
+		{startTime: "", endTime: "2024-10-03T00:43:29.935-0400", currentTime: "2024-10-03T00:43:29.932-0400", expectedInTimeRange: true},
 	}
 
 	for _, tc := range testCases {
-		result, err := IsWithinTimeRange(tc.currentTime, tc.startTime, tc.endTime)
+		result, err := IsWithinTimeRange(tc.currentTime, parseTime(tc.startTime), parseTime(tc.endTime))
 
 		if err != nil {
 			t.Error(err)
@@ -136,7 +149,7 @@ func TestFilterLogsByLevelAndTimeAndKeyword(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := FilterLogsByLevelAndTimeAndKeyword(tmpfile.Name(), tc.minLogLevel, tc.startTime, tc.endTime, tc.keyword)
+			err := FilterLogsByLevelAndTimeAndKeyword(io.Discard, tmpfile.Name(), tc.minLogLevel, tc.startTime, tc.endTime, tc.keyword)
 			if (err != nil) != tc.expectError {
 				t.Errorf("unexpected error result: got %v, want error=%v", err, tc.expectError)
 			}

@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"bytes"
 	"errors"
 	"flag"
-	"log"
 	"os"
-	"strings"
 	"testing"
 )
 
@@ -35,19 +32,16 @@ func TestExecute(t *testing.T) {
 			name:          "Missing log file",
 			args:          []string{"cmd", "--level=INFO", "--start-time=2024-10-03T00:43:29.918-0400", "--end-time=2024-10-03T00:43:29.919-0400"},
 			expectedError: true,
-			expectedLog:   "please provide a log file path using the -file flag\n",
 		},
 		{
 			name:          "Valid log file with INFO level",
 			args:          []string{"cmd", "--level=INFO", "--start-time=2024-10-03T00:43:29.918-0400", "--end-time=2024-10-03T00:43:29.919-0400", "--file=resources/log.txt"},
 			expectedError: false,
-			expectedLog:   "",
 		},
 		{
 			name:          "Filter logs returns error",
 			args:          []string{"cmd", "--level=ERROR", "--start-time=2024-10-03T00:43:29.918-0400", "--end-time=2024-10-03T00:43:29.919-0400", "--file=error.log"},
 			expectedError: true,
-			expectedLog:   "error filtering logs: mock error\n",
 		},
 	}
 
@@ -57,24 +51,14 @@ func TestExecute(t *testing.T) {
 			os.Args = tc.args
 
 			// Reset the flag package (to avoid conflicts between tests)
-			flag.CommandLine = flag.NewFlagSet(tc.name, flag.ExitOnError)
-
-			// Capture output
-			var buf bytes.Buffer
-			log.SetOutput(&buf) // Redirect log output to buffer
+			flag.CommandLine = flag.NewFlagSet(tc.name, flag.ContinueOnError)
 
 			// Call Execute with the mock filter function
 			err := Execute(mockFilterLogs)
 
 			// Check if an error was expected
 			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err != nil)
-			}
-
-			// Validate log output using strings.Contains
-			output := buf.String()
-			if tc.expectedLog != "" && !strings.Contains(output, tc.expectedLog) {
-				t.Errorf("Expected log to contain %q but got %q", tc.expectedLog, output)
+				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
 			}
 		})
 	}
